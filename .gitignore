@@ -1,0 +1,11 @@
+build/
+install/
+log/
+venv/
+# Python cache
+__pycache__/
+*.pyc
+*.bak
+*.github
+*.wbproj
+*.pt
