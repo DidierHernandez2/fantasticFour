@@ -131,3 +131,5 @@ robotec_ws/
 ├── map_2.yaml / map_2.pgm   # mapa pre-construido (apartamento)
 └── map_tec_2.yaml / .pgm    # mapa alternativo
 ```
+## Actividad M3.1: Conductas Robot Híbrido , exploración y seguimiento de trayectoria.
+https://youtu.be/8T3zra04jqQ
