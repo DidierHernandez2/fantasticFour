@@ -1,4 +1,7 @@
 # Equipo Fantastic Four — Implementación de Robótica y Sistemas Inteligentes
+## Actividad M3.1: Conductas Robot Híbrido , exploración y seguimiento de trayectoria.
+Prueba de frontier exploration
+https://youtu.be/8T3zra04jqQ
 
 <img width="331" height="496" alt="Captura de pantalla 2026-03-17 a la(s) 9 47 18 p m" src="https://github.com/user-attachments/assets/935a6e47-0d9a-458d-832b-6bb80e144825" />
 
@@ -112,7 +115,7 @@ ros2 launch robotino_webots yolo_person_detect.launch.py
 
 ## Dependencias
 
-- ROS 2 Humble
+- ROS 2 Jazzy
 - Webots (snap)
 - `slam_toolbox`, `nav2_*`
 - `ultralytics` (YOLO)
@@ -131,5 +134,4 @@ robotec_ws/
 ├── map_2.yaml / map_2.pgm   # mapa pre-construido (apartamento)
 └── map_tec_2.yaml / .pgm    # mapa alternativo
 ```
-## Actividad M3.1: Conductas Robot Híbrido , exploración y seguimiento de trayectoria.
-https://youtu.be/8T3zra04jqQ
+
