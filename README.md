@@ -10,19 +10,58 @@
 
 Sistema modular basado en ROS2 que integra:
 
-- Banda transportadora (TECO L510 vía Modbus)
-- Dashboard web
-- Interfaz táctil
-- Joystick
-- Simulación Webots
+- Banda transportadora (TECO L510 vía Modbus RTU)
+- Dashboard web en tiempo real
+- Interfaz táctil (HMI)
+- Control por joystick
+- Simulación en Webots
 - Robotino
-- Visión y audio
+- Visión artificial y audio
+
+---
+
+## Configuración del variador L510
+
+Para que la comunicación por RS485 funcione correctamente, el variador TECO L510 debe configurarse con los siguientes parámetros:
+
+### Parámetros configurados
+
+| Parámetro | Valor | Descripción |
+|----------|------|------------|
+| 00-02 | 2 | Fuente de RUN por comunicación |
+| 00-03 | 0 | Dirección controlada por comunicación |
+| 00-05 | 5 | Fuente de frecuencia por comunicación |
+| 00-06 | 2 | Fuente secundaria de frecuencia |
+| 09-00 | 1 | Dirección slave (ID Modbus) |
+| 09-01 | 0 | Modo comunicación |
+| 09-02 | 1 | Velocidad comunicación |
+| 09-03 | 0 | Bits de datos |
+| 09-04 | 0 | Paridad |
+| 09-05 | 0 | Stop bits |
+
+### Configuración de comunicación
+
+- Puerto: `/dev/ttyUSB0`
+- Baudrate: 9600
+- Paridad: N
+- Stopbits: 1
+- Bytesize: 8
+
+### Registros usados
+
+- 9473 → RUN / STOP / DIRECCIÓN
+- 9474 → FRECUENCIA
+- 9504 → ESTADO
+- 9505 → ERROR
+- 9507 → FRECUENCIA COMANDADA
+- 9508 → FRECUENCIA REAL
+- 9511 → CORRIENTE
 
 ---
 
 ## Instalación
 
-### 1. Workspace
+### Workspace
 
 ```bash
 mkdir -p ~/ros2_ws/src
@@ -31,7 +70,7 @@ cd ~/ros2_ws
 
 ---
 
-### 2. Entorno virtual
+### Entorno virtual
 
 ```bash
 python3 -m venv venv
@@ -41,7 +80,7 @@ pip install --upgrade pip
 
 ---
 
-### 3. Dependencias (IMPORTANTE)
+### Dependencias
 
 ```bash
 pip install -r requirements.txt
@@ -49,7 +88,7 @@ pip install -r requirements.txt
 
 ---
 
-### 4. Compilar
+### Compilar
 
 ```bash
 cd ~/ros2_ws
@@ -60,173 +99,49 @@ source install/setup.bash
 
 ---
 
-## ROS2 RUN (nodos disponibles)
+## ROS2 RUN
 
-### conveyor_dashboard
+### Banda (dashboard)
 
 ```bash
 ros2 run conveyor_dashboard l510_node
-```
-Controla el variador L510.
-
-```bash
 ros2 run conveyor_dashboard webcam_node
-```
-Publica cámara.
-
-```bash
 ros2 run conveyor_dashboard dashboard_node
 ```
-Levanta dashboard web.
 
 ---
 
-### l510_controller
+### Control directo
 
 ```bash
 ros2 run l510_controller l510_node
-```
-Control directo del variador.
-
-```bash
 ros2 run l510_controller l510_topic_node
 ```
-Control por tópicos.
 
 ---
 
-### touch_hmi
+### Interfaz táctil
 
 ```bash
 ros2 run touch_hmi touch_hmi_node
 ```
-Interfaz táctil.
 
 ---
 
-### joy_mapper
+### Joystick
 
 ```bash
 ros2 run joy_mapper joy_mapper_node
 ```
-Traduce joystick a comandos.
 
 ---
 
-### vision
-
-```bash
-ros2 run vision vision_node
-```
-Nodo principal de visión.
-
-```bash
-ros2 run vision yolo_person_node
-```
-Detección de personas.
-
----
-
-### robotino_audio
-
-```bash
-ros2 run robotino_audio vosk_node
-```
-Reconocimiento de voz.
-
----
-
-### robotino_tts
-
-```bash
-ros2 run robotino_tts espeak_tts_node
-```
-Síntesis de voz.
-
----
-
-### robotino_bts
-
-```bash
-ros2 run robotino_bts task_manager
-```
-Árboles de comportamiento.
-
----
-
-## ROS2 LAUNCH (sistemas completos)
-
-### Banda real
-
-```bash
-ros2 launch conveyor_dashboard dashboard.launch.py
-```
-Inicia:
-- Control L510
-- Cámara
-- Dashboard web
-
----
-
-### Banda simulada
-
-```bash
-ros2 launch conveyor_webots conveyor_launch.py
-```
-Simulación Webots.
-
----
-
-### Robotino simulación
-
-```bash
-ros2 launch robotino_webots robotino.launch.py
-```
-
----
-
-### Navegación
-
-```bash
-ros2 launch robotino_webots nav_robotino.launch.py
-```
-
----
-
-### SLAM
-
-```bash
-ros2 launch robotino_webots slam_mapping.launch.py
-```
-
----
-
-### Robot real
-
-```bash
-ros2 launch robotino_webots real_robotino.launch.py
-```
-
----
-
-## Uso recomendado
+## ROS2 LAUNCH
 
 ### Sistema completo banda
 
 ```bash
 ros2 launch conveyor_dashboard dashboard.launch.py
-```
-
-Abrir:
-
-http://localhost:8000
-
----
-
-### Pruebas simples
-
-```bash
-ros2 run l510_controller l510_topic_node
 ```
 
 ---
@@ -239,8 +154,54 @@ ros2 launch robotino_webots robotino.launch.py
 
 ---
 
+## Acceso remoto (Cloudflare)
+
+Para exponer el dashboard públicamente:
+
+```bash
+cloudflared tunnel --url http://localhost:8000
+```
+
+Esto generará una URL pública accesible desde cualquier red.
+
+---
+
+## Uso recomendado
+
+### Ejecutar sistema completo
+
+```bash
+ros2 launch conveyor_dashboard dashboard.launch.py
+```
+
+Abrir en navegador:
+
+```
+http://localhost:8000
+```
+
+---
+
+### Acceso remoto
+
+```bash
+cloudflared tunnel --url http://localhost:8000
+```
+
+---
+
 ## Notas
 
 - Usar ROS2 Jazzy
+- Verificar permisos de `/dev/ttyUSB0`
 - Usar entorno virtual
-- Verificar puerto /dev/ttyUSB0
+- Mantener consistencia entre `/l510_cmd` y `/conveyor/cmd`
+
+---
+
+## Estado
+
+- Banda: funcional
+- Dashboard: funcional
+- Comunicación RS485: funcional
+- Cloudflare: funcional
