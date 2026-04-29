@@ -42,21 +42,13 @@ class L510Controller:
         self.client.close()
 
     def read1(self, addr: int):
-        rr = self.client.read_holding_registers(
-            addr,
-            count=1,
-            device_id=self.device_id,
-        )
+        rr = self.client.read_holding_registers(addr, 1, slave=self.device_id)
         if rr.isError():
             return None
         return rr.registers[0]
 
     def write1(self, addr: int, value: int) -> bool:
-        wr = self.client.write_register(
-            addr,
-            value,
-            device_id=self.device_id,
-        )
+        wr = self.client.write_register(addr, value, slave=self.device_id)
         return not wr.isError()
 
     def hz_to_word(self, hz: float) -> int:
