@@ -3,135 +3,235 @@
 Prueba de frontier exploration
 https://youtu.be/8T3zra04jqQ
 
-<img width="331" height="496" alt="Captura de pantalla 2026-03-17 a la(s) 9 47 18 p m" src="https://github.com/user-attachments/assets/935a6e47-0d9a-458d-832b-6bb80e144825" />
-
-Simulación del robot **Robotino 3** en Webots con ROS 2, integrando navegación autónoma, exploración por fronteras y seguimiento de personas mediante visión computacional.
-
----
-
-## Paquetes principales
-
-- **robotino_webots** — driver del robot, configuración de Nav2, mundos y launchers
-- **vision** — nodos de percepción, planificación de rutas y exploración
+<div align="center">
+  <img width="331" height="496" alt="Captura de pantalla 2026-03-17 a la(s) 9 47 18 p m" src="https://github.com/user-attachments/assets/935a6e47-0d9a-458d-832b-6bb80e144825" />
+</div>
 
 ---
 
-## Launchers
+## Descripción general
 
-### `frontier_explore.launch.py` — Exploración autónoma por fronteras
+Este repositorio implementa un sistema robótico completo basado en ROS2 que integra:
 
-Lanza el robot en modo exploración: mapea el entorno de forma autónoma sin intervención humana.
+- Control de una banda transportadora mediante un variador TECO L510 (Modbus RTU sobre RS485)
+- Interfaz gráfica web en tiempo real (dashboard)
+- Interfaz táctil tipo HMI
+- Control mediante joystick
+- Simulación en Webots (banda y robot móvil)
+- Robotino (simulación y robot real)
+- Visión artificial (YOLO, segmentación, pose, reconocimiento facial)
+- Audio (reconocimiento de voz y síntesis)
+- Navegación autónoma (Nav2 + SLAM)
+- Árboles de comportamiento
 
-**¿Qué hace?**
-
-1. Abre Webots con el mundo `robotino_apartment.wbt`.
-2. Levanta `slam_toolbox` para construir el mapa en tiempo real con el LIDAR.
-3. Inicia `frontier_exploration_node` que implementa la siguiente máquina de estados:
-
-| Estado | Descripción |
-|---|---|
-| `SPINNING` | Giro inicial de 360° para que slam_toolbox tenga datos suficientes |
-| `FINDING` | Detecta celdas frontera (celdas libres adyacentes a zonas desconocidas) y las agrupa en clusters |
-| `PATH_PLANNING` | Solicita un camino A* al centroide del cluster más lejano (para maximizar área explorada) |
-| `MOVING` | Sigue el camino; `obstacle_avoidance_node` filtra `/cmd_vel` para evitar colisiones |
-| `ARRIVED` | Llegó al frontier, busca el siguiente |
-| `DONE` | No quedan fronteras: exploración completa |
-
-4. Visualiza los clusters de fronteras y el objetivo actual en RViz (`frontier.rviz`).
-
-**Nodos lanzados (secuencia temporal):**
-
-```
-t=0s   Webots
-t=5s   robotino_controller
-t=6s   robot_state_publisher
-t=7s   slam_toolbox + static TFs
-t=9s   lifecycle_manager (slam)
-t=12s  path_planning_node (A*)
-t=13s  obstacle_avoidance_node + laser_map_node
-t=14s  frontier_exploration_node
-t=15s  RViz2
-```
-
-**Cómo lanzar:**
-```bash
-ros2 launch robotino_webots frontier_explore.launch.py
-```
+El sistema está diseñado de forma modular mediante paquetes ROS2.
 
 ---
 
-### `yolo_person_detect.launch.py` — Seguimiento de personas con YOLO
+## Estructura del repositorio
 
-Lanza el robot en modo seguimiento: detecta personas con una cámara RGB-D y las sigue navegando de forma autónoma.
+```text
+.
+├── maps
+├── worlds
+├── requirements.txt
+├── src
+│   ├── conveyor_dashboard
+│   ├── conveyor_webots
+│   ├── joy_mapper
+│   ├── known_locations_tf_server
+│   ├── l510_controller
+│   ├── robotino_audio
+│   ├── robotino_bts
+│   ├── robotino_interfaces
+│   ├── robotino_webots
+│   ├── robot_movement
+│   ├── touch_hmi
+│   └── vision
+Instalación
+1. Crear workspace
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws
 
-**¿Qué hace?**
+Copiar el repositorio dentro de src.
 
-1. Abre Webots con el mundo configurado y carga un mapa pre-construido con `map_server`.
-2. Levanta el stack completo de Nav2 (controller, planner, smoother, BT navigator, collision monitor) y `slam_toolbox` para localización.
-3. Inicia `yolo_person_node` con la siguiente máquina de estados:
+2. Crear ambiente virtual
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip setuptools
+3. Instalar dependencias Python
+pip install pymodbus pyserial opencv-python fastapi uvicorn pyyaml numpy scipy ultralytics torch torchvision facenet-pytorch vosk py_trees py_trees_ros
+4. Dependencias del sistema
+sudo apt update
+sudo apt install -y \
+  python3-colcon-common-extensions \
+  ros-jazzy-joy \
+  ros-jazzy-nav2-bringup \
+  ros-jazzy-slam-toolbox \
+  ros-jazzy-tf2-ros \
+  ros-jazzy-webots-ros2-driver \
+  espeak-ng
+5. Permisos serial
+sudo usermod -a -G dialout $USER
 
-| Estado | Descripción |
-|---|---|
-| `SEARCHING` | El robot gira lentamente hasta detectar una persona |
-| `PERSON_FOUND` | Detiene el giro, espera datos de profundidad |
-| `MEASURING_DISTANCE` | Usa la máscara de segmentación YOLO + imagen de profundidad del Kinect para calcular la posición 3D de la persona y transformarla al frame `map` |
-| `PATH_PLANNING` | Solicita un camino A* hacia la posición de la persona |
-| `MOVING_AND_OBSTACLEDETECTION` | Publica velocidad de atracción en `/cmd_vel_desired`; `obstacle_avoidance_node` la filtra antes de enviarla al robot |
-| `ARRIVED` | Llegó cerca de la persona (< 1 m), vuelve a `SEARCHING` |
+Reiniciar sesión.
 
-4. Modela `yolo11n-seg.pt` (YOLO11 nano segmentación) sobre el tópico `/kinect_sim/rgb/image_raw`.
-5. Nodos adicionales de mapeo: `map_trace_node`, `bayesian_mapper_node`, `laser_map_node`, `path_planning_node`, `potential_field_viz_node`.
+6. Compilar
+cd ~/ros2_ws
+source /opt/ros/jazzy/setup.bash
+source venv/bin/activate
+colcon build --symlink-install
+source install/setup.bash
+Paquetes principales
+conveyor_dashboard
 
-**Nodos lanzados (secuencia temporal):**
+Control completo de la banda con interfaz web.
 
-```
-t=0s   Webots
-t=5s   robotino_controller
-t=6s   robot_state_publisher
-t=7s   slam_toolbox + static TFs
-t=8s   map_server
-t=9s   lifecycle_manager (slam)
-t=12s  controller_server
-t=14s  planner_server
-t=15s  smoother_server
-t=16s  behavior_server
-t=17s  velocity_smoother
-t=18s  collision_monitor + bt_navigator
-t=20s  lifecycle_manager (nav2)
-t=23s  path_planning_node + potential_field_viz_node
-t=24s  map_trace_node + bayesian_mapper_node + laser_map_node
-t=24s  RViz2
-t=25s  yolo_person_node + obstacle_avoidance_node
-```
+Nodos:
 
-**Cómo lanzar:**
-```bash
-ros2 launch robotino_webots yolo_person_detect.launch.py
-```
+ros2 run conveyor_dashboard l510_node
+ros2 run conveyor_dashboard webcam_node
+ros2 run conveyor_dashboard dashboard_node
 
-> El mapa por defecto es `~/robotec_ws/map_2.yaml`. Se puede cambiar con el argumento `map_file`.
+Funciones:
 
----
+Control de banda
+Telemetría en tiempo real
+Video en vivo
+Interfaz web (FastAPI)
 
-## Dependencias
+Abrir:
 
-- ROS 2 Jazzy
-- Webots (snap)
-- `slam_toolbox`, `nav2_*`
-- `ultralytics` (YOLO)
-- `cv_bridge`, `tf2_ros`, `tf_transformations`
+http://localhost:8000
+l510_controller
 
----
+Control directo del variador.
 
-## Estructura del workspace
+ros2 run l510_controller l510_node
+ros2 run l510_controller l510_topic_node
 
-```
-robotec_ws/
-├── src/
-│   ├── robotino_webots/     # driver, config Nav2, mundos, launchers
-│   └── vision/              # yolo_person_node, frontier_exploration_node,
-│                            # path_planning_node, obstacle_avoidance_node, ...
-├── map_2.yaml / map_2.pgm   # mapa pre-construido (apartamento)
-└── map_tec_2.yaml / .pgm    # mapa alternativo
+Comandos:
+
+run
+reverse
+stop
+freq 20
+touch_hmi
+
+Interfaz táctil industrial.
+
+ros2 run touch_hmi touch_hmi_node
+joy_mapper
+
+Control con joystick.
+
+ros2 run joy joy_node
+ros2 run joy_mapper joy_mapper_node
+conveyor_webots
+
+Simulación de banda.
+
+ros2 launch conveyor_webots conveyor_launch.py
+robotino_webots
+
+Simulación y robot real.
+
+Ejemplos:
+
+ros2 launch robotino_webots robotino.launch.py
+ros2 launch robotino_webots nav_robotino.launch.py
+ros2 launch robotino_webots slam_mapping.launch.py
+ros2 launch robotino_webots real_robotino.launch.py
+vision
+
+Percepción completa.
+
+ros2 run vision vision_node
+ros2 run vision yolo_person_node
+ros2 run vision obstacle_avoidance_node
+robotino_audio
+
+Reconocimiento de voz.
+
+ros2 run robotino_audio vosk_node
+robotino_tts
+
+Síntesis de voz.
+
+ros2 run robotino_tts espeak_tts_node
+robotino_bts
+
+Árboles de comportamiento.
+
+ros2 run robotino_bts task_manager
+known_locations_tf_server
+
+Ubicaciones conocidas.
+
+ros2 run known_locations_tf_server known_locations_server
+Launch principales
+Banda real (RECOMENDADO)
+ros2 launch conveyor_dashboard dashboard.launch.py
+Banda simulada
+ros2 launch conveyor_webots conveyor_launch.py
+Robotino simulación
+ros2 launch robotino_webots robotino.launch.py
+Navegación
+ros2 launch robotino_webots nav_robotino.launch.py
+SLAM
+ros2 launch robotino_webots slam_mapping.launch.py
+Robot real
+ros2 launch robotino_webots real_robotino.launch.py
+Tópicos principales
+/conveyor/cmd
+/conveyor/telemetry
+/l510_cmd
+/camera/image/compressed
+/conveyor_speed
+Comandos útiles
+
+Ver nodos:
+
+ros2 node list
+
+Ver tópicos:
+
+ros2 topic list
+
+Telemetría:
+
+ros2 topic echo /conveyor/telemetry
+
+Enviar comando:
+
+ros2 topic pub --once /conveyor/cmd std_msgs/msg/String "{data: '{\"action\":\"forward\"}'}"
+Recomendación de uso
+
+Para operación completa de la banda:
+
+ros2 launch conveyor_dashboard dashboard.launch.py
+
+Para pruebas rápidas:
+
+ros2 run l510_controller l510_topic_node
+
+Para simulación:
+
+ros2 launch robotino_webots robotino.launch.py
+Notas
+Existen dos sistemas de comandos (/l510_cmd y /conveyor/cmd)
+Se recomienda unificarlos en producción
+El sistema está modularizado para pruebas independientes
+Estado del proyecto
+Banda transportadora: funcional con ROS2
+Dashboard web: funcional
+Interfaz táctil: funcional
+Simulación Webots: funcional
+Robotino: integración completa
+Visión: múltiples módulos disponibles
+Audio: integrado
+Navegación: funcional
+
+Proyecto listo para integración avanzada y despliegue en robot real.
 ```
 
