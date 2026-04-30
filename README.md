@@ -1,237 +1,207 @@
-# Equipo Fantastic Four — Implementación de Robótica y Sistemas Inteligentes
-## Actividad M3.1: Conductas Robot Híbrido , exploración y seguimiento de trayectoria.
-Prueba de frontier exploration
-https://youtu.be/8T3zra04jqQ
+# Sistema Robótico ROS2 con Banda Transportadora, Robotino y Simulación
 
 <div align="center">
-  <img width="331" height="496" alt="Captura de pantalla 2026-03-17 a la(s) 9 47 18 p m" src="https://github.com/user-attachments/assets/935a6e47-0d9a-458d-832b-6bb80e144825" />
+  <img width="331" height="496" src="https://github.com/user-attachments/assets/935a6e47-0d9a-458d-832b-6bb80e144825" />
 </div>
 
 ---
 
-## Descripción general
+## Descripción
 
-Este repositorio implementa un sistema robótico completo basado en ROS2 que integra:
+Sistema modular basado en ROS2 que integra:
 
-- Control de una banda transportadora mediante un variador TECO L510 (Modbus RTU sobre RS485)
-- Interfaz gráfica web en tiempo real (dashboard)
-- Interfaz táctil tipo HMI
-- Control mediante joystick
-- Simulación en Webots (banda y robot móvil)
-- Robotino (simulación y robot real)
-- Visión artificial (YOLO, segmentación, pose, reconocimiento facial)
-- Audio (reconocimiento de voz y síntesis)
-- Navegación autónoma (Nav2 + SLAM)
-- Árboles de comportamiento
-
-El sistema está diseñado de forma modular mediante paquetes ROS2.
+- Banda transportadora (TECO L510 vía Modbus RTU)
+- Dashboard web en tiempo real
+- Interfaz táctil (HMI)
+- Control por joystick
+- Simulación en Webots
+- Robotino
+- Visión artificial y audio
 
 ---
 
-## Estructura del repositorio
+## Configuración del variador L510
 
-```text
-.
-├── maps
-├── worlds
-├── requirements.txt
-├── src
-│   ├── conveyor_dashboard
-│   ├── conveyor_webots
-│   ├── joy_mapper
-│   ├── known_locations_tf_server
-│   ├── l510_controller
-│   ├── robotino_audio
-│   ├── robotino_bts
-│   ├── robotino_interfaces
-│   ├── robotino_webots
-│   ├── robot_movement
-│   ├── touch_hmi
-│   └── vision
-Instalación
-1. Crear workspace
+Para que la comunicación por RS485 funcione correctamente, el variador TECO L510 debe configurarse con los siguientes parámetros:
+
+### Parámetros configurados
+
+| Parámetro | Valor | Descripción |
+|----------|------|------------|
+| 00-02 | 2 | Fuente de RUN por comunicación |
+| 00-03 | 0 | Dirección controlada por comunicación |
+| 00-05 | 5 | Fuente de frecuencia por comunicación |
+| 00-06 | 2 | Fuente secundaria de frecuencia |
+| 09-00 | 1 | Dirección slave (ID Modbus) |
+| 09-01 | 0 | Modo comunicación |
+| 09-02 | 1 | Velocidad comunicación |
+| 09-03 | 0 | Bits de datos |
+| 09-04 | 0 | Paridad |
+| 09-05 | 0 | Stop bits |
+
+### Configuración de comunicación
+
+- Puerto: `/dev/ttyUSB0`
+- Baudrate: 9600
+- Paridad: N
+- Stopbits: 1
+- Bytesize: 8
+
+### Registros usados
+
+- 9473 → RUN / STOP / DIRECCIÓN
+- 9474 → FRECUENCIA
+- 9504 → ESTADO
+- 9505 → ERROR
+- 9507 → FRECUENCIA COMANDADA
+- 9508 → FRECUENCIA REAL
+- 9511 → CORRIENTE
+
+---
+
+## Instalación
+
+### Workspace
+
+```bash
 mkdir -p ~/ros2_ws/src
 cd ~/ros2_ws
+```
 
-Copiar el repositorio dentro de src.
+---
 
-2. Crear ambiente virtual
+### Entorno virtual
+
+```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install --upgrade pip setuptools
-3. Instalar dependencias Python
-pip install pymodbus pyserial opencv-python fastapi uvicorn pyyaml numpy scipy ultralytics torch torchvision facenet-pytorch vosk py_trees py_trees_ros
-4. Dependencias del sistema
-sudo apt update
-sudo apt install -y \
-  python3-colcon-common-extensions \
-  ros-jazzy-joy \
-  ros-jazzy-nav2-bringup \
-  ros-jazzy-slam-toolbox \
-  ros-jazzy-tf2-ros \
-  ros-jazzy-webots-ros2-driver \
-  espeak-ng
-5. Permisos serial
-sudo usermod -a -G dialout $USER
+pip install --upgrade pip
+```
 
-Reiniciar sesión.
+---
 
-6. Compilar
+### Dependencias
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+### Compilar
+
+```bash
 cd ~/ros2_ws
 source /opt/ros/jazzy/setup.bash
-source venv/bin/activate
 colcon build --symlink-install
 source install/setup.bash
-Paquetes principales
-conveyor_dashboard
+```
 
-Control completo de la banda con interfaz web.
+---
 
-Nodos:
+## ROS2 RUN
 
+### Banda (dashboard)
+
+```bash
 ros2 run conveyor_dashboard l510_node
 ros2 run conveyor_dashboard webcam_node
 ros2 run conveyor_dashboard dashboard_node
-
-Funciones:
-
-Control de banda
-Telemetría en tiempo real
-Video en vivo
-Interfaz web (FastAPI)
-
-Abrir:
-
-http://localhost:8000
-l510_controller
-
-Control directo del variador.
-
-ros2 run l510_controller l510_node
-ros2 run l510_controller l510_topic_node
-
-Comandos:
-
-run
-reverse
-stop
-freq 20
-touch_hmi
-
-Interfaz táctil industrial.
-
-ros2 run touch_hmi touch_hmi_node
-joy_mapper
-
-Control con joystick.
-
-ros2 run joy joy_node
-ros2 run joy_mapper joy_mapper_node
-conveyor_webots
-
-Simulación de banda.
-
-ros2 launch conveyor_webots conveyor_launch.py
-robotino_webots
-
-Simulación y robot real.
-
-Ejemplos:
-
-ros2 launch robotino_webots robotino.launch.py
-ros2 launch robotino_webots nav_robotino.launch.py
-ros2 launch robotino_webots slam_mapping.launch.py
-ros2 launch robotino_webots real_robotino.launch.py
-vision
-
-Percepción completa.
-
-ros2 run vision vision_node
-ros2 run vision yolo_person_node
-ros2 run vision obstacle_avoidance_node
-robotino_audio
-
-Reconocimiento de voz.
-
-ros2 run robotino_audio vosk_node
-robotino_tts
-
-Síntesis de voz.
-
-ros2 run robotino_tts espeak_tts_node
-robotino_bts
-
-Árboles de comportamiento.
-
-ros2 run robotino_bts task_manager
-known_locations_tf_server
-
-Ubicaciones conocidas.
-
-ros2 run known_locations_tf_server known_locations_server
-Launch principales
-Banda real (RECOMENDADO)
-ros2 launch conveyor_dashboard dashboard.launch.py
-Banda simulada
-ros2 launch conveyor_webots conveyor_launch.py
-Robotino simulación
-ros2 launch robotino_webots robotino.launch.py
-Navegación
-ros2 launch robotino_webots nav_robotino.launch.py
-SLAM
-ros2 launch robotino_webots slam_mapping.launch.py
-Robot real
-ros2 launch robotino_webots real_robotino.launch.py
-Tópicos principales
-/conveyor/cmd
-/conveyor/telemetry
-/l510_cmd
-/camera/image/compressed
-/conveyor_speed
-Comandos útiles
-
-Ver nodos:
-
-ros2 node list
-
-Ver tópicos:
-
-ros2 topic list
-
-Telemetría:
-
-ros2 topic echo /conveyor/telemetry
-
-Enviar comando:
-
-ros2 topic pub --once /conveyor/cmd std_msgs/msg/String "{data: '{\"action\":\"forward\"}'}"
-Recomendación de uso
-
-Para operación completa de la banda:
-
-ros2 launch conveyor_dashboard dashboard.launch.py
-
-Para pruebas rápidas:
-
-ros2 run l510_controller l510_topic_node
-
-Para simulación:
-
-ros2 launch robotino_webots robotino.launch.py
-Notas
-Existen dos sistemas de comandos (/l510_cmd y /conveyor/cmd)
-Se recomienda unificarlos en producción
-El sistema está modularizado para pruebas independientes
-Estado del proyecto
-Banda transportadora: funcional con ROS2
-Dashboard web: funcional
-Interfaz táctil: funcional
-Simulación Webots: funcional
-Robotino: integración completa
-Visión: múltiples módulos disponibles
-Audio: integrado
-Navegación: funcional
-
-Proyecto listo para integración avanzada y despliegue en robot real.
 ```
 
+---
+
+### Control directo
+
+```bash
+ros2 run l510_controller l510_node
+ros2 run l510_controller l510_topic_node
+```
+
+---
+
+### Interfaz táctil
+
+```bash
+ros2 run touch_hmi touch_hmi_node
+```
+
+---
+
+### Joystick
+
+```bash
+ros2 run joy_mapper joy_mapper_node
+```
+
+---
+
+## ROS2 LAUNCH
+
+### Sistema completo banda
+
+```bash
+ros2 launch conveyor_dashboard dashboard.launch.py
+```
+
+---
+
+### Simulación
+
+```bash
+ros2 launch robotino_webots robotino.launch.py
+```
+
+---
+
+## Acceso remoto (Cloudflare)
+
+Para exponer el dashboard públicamente:
+
+```bash
+cloudflared tunnel --url http://localhost:8000
+```
+
+Esto generará una URL pública accesible desde cualquier red.
+
+---
+
+## Uso recomendado
+
+### Ejecutar sistema completo
+
+```bash
+ros2 launch conveyor_dashboard dashboard.launch.py
+```
+
+Abrir en navegador:
+
+```
+http://localhost:8000
+```
+
+---
+
+### Acceso remoto
+
+```bash
+cloudflared tunnel --url http://localhost:8000
+```
+
+---
+
+## Notas
+
+- Usar ROS2 Jazzy
+- Verificar permisos de `/dev/ttyUSB0`
+- Usar entorno virtual
+- Mantener consistencia entre `/l510_cmd` y `/conveyor/cmd`
+
+---
+
+## Estado
+
+- Banda: funcional
+- Dashboard: funcional
+- Comunicación RS485: funcional
+- Cloudflare: funcional

@@ -1,0 +1,13 @@
+python3-colcon-common-extensions
+ros-jazzy-joy
+ros-jazzy-joy-linux
+ros-jazzy-teleop-twist-joy
+ros-jazzy-nav2-bringup
+ros-jazzy-slam-toolbox
+ros-jazzy-tf2-ros
+ros-jazzy-tf2-geometry-msgs
+ros-jazzy-robot-state-publisher
+ros-jazzy-rviz2
+ros-jazzy-webots-ros2-driver
+ros-jazzy-audio-common-msgs
+ros-jazzy-vision-msgs

@@ -1,0 +1,15 @@
+pymodbus
+pyserial
+opencv-python
+fastapi
+uvicorn
+pyyaml
+numpy
+scipy
+ultralytics
+torch
+torchvision
+facenet-pytorch
+vosk
+py_trees
+py_trees_ros
