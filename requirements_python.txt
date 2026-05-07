@@ -12,4 +12,5 @@ torchvision
 facenet-pytorch
 vosk
 py_trees
-py_trees_ros
+#py_trees_ros
+setuptools==68.1.0

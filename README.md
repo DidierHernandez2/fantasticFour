@@ -65,11 +65,23 @@ Para que la comunicación por RS485 funcione correctamente, el variador TECO L51
 
 ## Instalación
 
+### Pre-requisitos
+
+```bash
+sudo apt-get install python3-colcon-common-extensions ros-jazzy-joy ros-jazzy-joy-linux ros-jazzy-teleop-twist-joy ros-jazzy-nav2-bringup ros-jazzy-slam-toolbox ros-jazzy-tf2-ros ros-jazzy-tf2-geometry-msgs ros-jazzy-robot-state-publisher ros-jazzy-rviz2 ros-jazzy-webots-ros2-driver ros-jazzy-audio-common-msgs ros-jazzy-vision-msgs
+```
+
+Nota: de preferencia usar la variable de entorno $ROS_DISTRO para no requerir actualizar después.
+
+`sudo apt-get install ros-$ROS_DISTRO-tf2-geometry-msgs`.
+
+
 ### Workspace
 
 ```bash
-mkdir -p ~/ros2_ws/src
-cd ~/ros2_ws
+cd ~
+git clone https://github.com/DidierHernandez2/fantasticFour.git
+cd fantasticFour
 ```
 
 ---
@@ -87,7 +99,7 @@ pip install --upgrade pip
 ### Dependencias
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements_python.txt
 ```
 
 ---
@@ -95,8 +107,10 @@ pip install -r requirements.txt
 ### Compilar
 
 ```bash
-cd ~/ros2_ws
+cd ~/fantasticFour
 source /opt/ros/jazzy/setup.bash
+colcon build --packages-select robotino_interfaces
+source install/setup.bash
 colcon build --symlink-install
 source install/setup.bash
 ```
