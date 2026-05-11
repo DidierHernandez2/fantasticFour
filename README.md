@@ -10,7 +10,7 @@
 - **Didier Aarón Ricardo Hernández Ferreira** *A01663817*
 - **Mariana Edith Ramírez Navarrete** *A01662169*
 - **Patricio Maldonado Poiré** *A01664661*
-=======
+
 ## Videos entrgables:
 **Video Demostración Dashboard Banda:** https://youtu.be/YWbX2HWoBfs
 
