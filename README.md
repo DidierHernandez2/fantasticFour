@@ -5,7 +5,6 @@
 </div>
 
 ---
-<<<<<<< HEAD
 ## Miembros:
 - **Alonso Guerrero Fong** *A01657743*
 - **Didier Aarón Ricardo Hernández Ferreira** *A01663817*
@@ -17,7 +16,6 @@
 
 **Video Demostración Webots:** https://youtu.be/8T3zra04jqQ
 
->>>>>>> origin/main
 ## Descripción
 
 Sistema modular basado en ROS2 que integra:
