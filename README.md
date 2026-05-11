@@ -5,7 +5,11 @@
 </div>
 
 ---
-
+## Miembros:
+- **Alonso Guerrero Fong** *A01657743*
+- **Didier Aarón Ricardo Hernández Ferreira** *A01663817*
+- **Mariana Edith Ramírez Navarrete** *A01662169*
+- **Patricio Maldonado Poiré** *A01664661*
 ## Descripción
 
 Sistema modular basado en ROS2 que integra:
