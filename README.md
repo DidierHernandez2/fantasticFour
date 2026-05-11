@@ -24,6 +24,17 @@ Sistema modular basado en ROS2 que integra:
 
 ---
 
+# Requisitos
+
+- Ubuntu 24.04
+- ROS2 Jazzy
+- Python 3
+- pip
+- rosdep
+- Webots (opcional para simulación)
+
+---
+
 ## Configuración del variador L510
 
 Para que la comunicación por RS485 funcione correctamente, el variador TECO L510 debe configurarse con los siguientes parámetros:
@@ -63,9 +74,9 @@ Para que la comunicación por RS485 funcione correctamente, el variador TECO L51
 
 ---
 
-## Instalación
+# Instalación
 
-### Workspace
+## Workspace
 
 ```bash
 mkdir -p ~/ros2_ws/src
@@ -74,38 +85,106 @@ cd ~/ros2_ws
 
 ---
 
-### Entorno virtual
+## Clonar repositorio
+
+```bash
+git clone https://github.com/DidierHernandez2/fantasticFour.git src/fantasticFour
+```
+
+---
+
+## Dependencias del sistema
+
+```bash
+sudo apt update
+
+sudo apt install -y \
+python3-pip \
+python3-venv \
+python3-rosdep
+```
+
+---
+
+## Inicializar rosdep
+
+```bash
+sudo rosdep init
+rosdep update
+```
+
+---
+
+## Entorno virtual
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
+
 pip install --upgrade pip
 ```
 
 ---
 
-### Dependencias
+## Dependencias Python
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements_python.txt
 ```
 
 ---
 
-### Compilar
+## Dependencias ROS2
+
+```bash
+rosdep install --from-paths src --ignore-src -r -y
+```
+
+---
+
+## Compilar
 
 ```bash
 cd ~/ros2_ws
+
 source /opt/ros/jazzy/setup.bash
+
 colcon build --symlink-install
+
 source install/setup.bash
 ```
 
 ---
 
-## ROS2 RUN
+# Generar archivos de dependencias automáticamente
 
-### Banda (dashboard)
+## Generar requirements_python.txt
+
+```bash
+pipreqs . --force && \
+grep -viE "(rclpy|geometry_msgs|sensor_msgs|std_msgs|std_srvs|nav_msgs|vision_msgs|tf2|launch_ros|cv_bridge|webots_ros2_driver|rosidl|ament|example_interfaces|service_msgs|visualization_msgs|nav2_msgs|control_msgs|controller|pytest|setuptools|testpath)" requirements.txt | \
+cut -d '=' -f1 | \
+sort -u > requirements_python.txt && \
+echo -e "pyserial\npython-dotenv\nwebsockets" >> requirements_python.txt && \
+sort -u requirements_python.txt -o requirements_python.txt
+```
+
+---
+
+## Generar ros2_requirements.txt
+
+```bash
+grep -R -E "<depend>|<exec_depend>|<build_depend>" src/ \
+| sed -E 's/.*<(depend|exec_depend|build_depend)>(.*)<\/(depend|exec_depend|build_depend)>.*/\2/' \
+| grep -viE "(python3-pymodbus|python3-yaml|py_trees)" \
+| sort -u > ros2_requirements.txt
+```
+
+---
+
+# ROS2 RUN
+
+## Banda (dashboard)
 
 ```bash
 ros2 run conveyor_dashboard l510_node
@@ -115,7 +194,7 @@ ros2 run conveyor_dashboard dashboard_node
 
 ---
 
-### Control directo
+## Control directo
 
 ```bash
 ros2 run l510_controller l510_node
@@ -124,7 +203,7 @@ ros2 run l510_controller l510_topic_node
 
 ---
 
-### Interfaz táctil
+## Interfaz táctil
 
 ```bash
 ros2 run touch_hmi touch_hmi_node
@@ -132,7 +211,7 @@ ros2 run touch_hmi touch_hmi_node
 
 ---
 
-### Joystick
+## Joystick
 
 ```bash
 ros2 run joy_mapper joy_mapper_node
@@ -140,9 +219,9 @@ ros2 run joy_mapper joy_mapper_node
 
 ---
 
-## ROS2 LAUNCH
+# ROS2 LAUNCH
 
-### Sistema completo banda
+## Sistema completo banda
 
 ```bash
 ros2 launch conveyor_dashboard dashboard.launch.py
@@ -150,7 +229,7 @@ ros2 launch conveyor_dashboard dashboard.launch.py
 
 ---
 
-### Simulación
+## Simulación
 
 ```bash
 ros2 launch robotino_webots robotino.launch.py
@@ -158,7 +237,7 @@ ros2 launch robotino_webots robotino.launch.py
 
 ---
 
-## Acceso remoto (Cloudflare)
+# Acceso remoto (Cloudflare)
 
 Para exponer el dashboard públicamente:
 
@@ -170,9 +249,9 @@ Esto generará una URL pública accesible desde cualquier red.
 
 ---
 
-## Uso recomendado
+# Uso recomendado
 
-### Ejecutar sistema completo
+## Ejecutar sistema completo
 
 ```bash
 ros2 launch conveyor_dashboard dashboard.launch.py
@@ -180,13 +259,13 @@ ros2 launch conveyor_dashboard dashboard.launch.py
 
 Abrir en navegador:
 
-```
+```txt
 http://localhost:8000
 ```
 
 ---
 
-### Acceso remoto
+## Acceso remoto
 
 ```bash
 cloudflared tunnel --url http://localhost:8000
@@ -194,7 +273,7 @@ cloudflared tunnel --url http://localhost:8000
 
 ---
 
-## Notas
+# Notas
 
 - Usar ROS2 Jazzy
 - Verificar permisos de `/dev/ttyUSB0`
@@ -203,9 +282,11 @@ cloudflared tunnel --url http://localhost:8000
 
 ---
 
-## Estado
+# Estado
 
 - Banda: funcional
 - Dashboard: funcional
 - Comunicación RS485: funcional
 - Cloudflare: funcional
+- Webots: funcional
+- Robotino: funcional
